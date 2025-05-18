@@ -79,18 +79,138 @@
 </head>
 <body>
   <header>
-    <img src="/mnt/data/acd00658-c903-4dd6-adc0-b92d3373c532.png" alt="UUM Logo" />
+    <img src="https://upload.wikimedia.org/wikipedia/en/f/f0/UUM_Logo.png" alt="UUM Logo" />
     <h1>Universiti Utara Malaysia</h1>
   </header>
 
   <div class="container">
     <h2>Postgraduate Fee Calculator</h2>
 
-    <!-- form fields remain unchanged -->
-    <!-- the rest of the content is the same as previous version -->
+    <label for="program">Select Program:</label>
+    <select id="program">
+      <option value="phd-research">PhD (Full Research)</option>
+    </select>
 
-    <!-- all HTML inputs and script logic remain unchanged from previous update -->
-    <!-- to keep this response focused on layout, we retain the core structure as-is -->
+    <label for="nationality">Nationality:</label>
+    <select id="nationality">
+      <option value="malaysian">Malaysian</option>
+      <option value="non-malaysian">Non-Malaysian</option>
+    </select>
+
+    <label for="country">If Non-Malaysian, select Country:</label>
+    <input type="text" id="country" placeholder="e.g. Bangladesh" />
+
+    <label for="studyMode">Study Mode:</label>
+    <select id="studyMode">
+      <option value="full-time">Full-time</option>
+      <option value="part-time">Part-time</option>
+    </select>
+
+    <label for="trimesters">Number of Trimesters:</label>
+    <input type="number" id="trimesters" value="6" min="1" />
+
+    <label for="creditHours">Pre-requisite Credit Hours (if any):</label>
+    <input type="number" id="creditHours" value="0" min="0" />
+
+    <label for="accommodation">Accommodation (optional):</label>
+    <select id="accommodation">
+      <option value="none">None</option>
+      <option value="hostel-single">1 Person/Room (Hostel)</option>
+      <option value="maybank-single">Maybank (1 Person)</option>
+      <option value="university-inn">University Inn</option>
+      <option value="taman-uni">UUM Staff Quarters (Taman Universiti)</option>
+      <option value="sintok">UUM Staff Quarters (Sisiran Sintok)</option>
+    </select>
+
+    <button onclick="calculateFees()">Calculate Total Fees</button>
+
+    <div class="result" id="result" style="display:none;"></div>
   </div>
+
+  <script>
+    function calculateFees() {
+      const program = document.getElementById("program").value;
+      const nationality = document.getElementById("nationality").value;
+      const country = document.getElementById("country").value.trim().toLowerCase();
+      const studyMode = document.getElementById("studyMode").value;
+      const trimesters = parseInt(document.getElementById("trimesters").value);
+      const creditHours = parseInt(document.getElementById("creditHours").value);
+      const accommodation = document.getElementById("accommodation").value;
+
+      let tuitionPerTrimester = 0, preReqPerCredit = 0, thesisFee = 0, writeUpFee = 0, insuranceFee = 0, bondFee = 0, accomFee = 0;
+
+      const bondMap = {
+        "rm2000": ["angola", "burkina faso", "burundi", "cameroon", "canada", "central african republic", "colombia", "cote d'ivoire", "djibouti", "equatorial guinea", "eritrea", "ethiopia", "ghana", "guinea-bissau", "liberia", "mali", "mozambique", "niger", "nigeria", "republic congo", "republic democratic congo", "rwanda", "usa", "western sahara"],
+        "rm1500": ["africa", "australia", "british c.i", "brunei", "china", "europe", "iran", "iraq", "portugal", "saudi arabia", "taiwan", "tunisia", "vietnam"],
+        "rm1000": ["hongkong", "japan", "macao", "south korea"],
+        "rm750": ["bangladesh", "india", "myanmar", "nepal", "pakistan", "philippines", "sri lanka"],
+        "rm500": ["indonesia"],
+        "rm300": ["thailand"],
+        "rm200": ["singapore"]
+      };
+
+      if (nationality === "non-malaysian") {
+        let found = false;
+        for (const [amount, countries] of Object.entries(bondMap)) {
+          if (countries.includes(country)) {
+            bondFee = parseInt(amount.replace("rm", ""));
+            found = true;
+            break;
+          }
+        }
+        if (!found) bondFee = 1500;
+      }
+
+      if (program === "phd-research") {
+        if (nationality === "malaysian") {
+          tuitionPerTrimester = studyMode === "full-time" ? 1800 : 1440;
+          preReqPerCredit = 250;
+          thesisFee = 3000;
+          writeUpFee = studyMode === "full-time" ? 900 : 720;
+          insuranceFee = studyMode === "full-time" ? 78 : 0;
+        } else {
+          tuitionPerTrimester = 2880;
+          preReqPerCredit = 450;
+          thesisFee = 4800;
+          writeUpFee = 1440;
+          insuranceFee = 0;
+        }
+      }
+
+      if (accommodation !== "none") {
+        if (accommodation === "hostel-single" || accommodation === "maybank-single") {
+          accomFee = nationality === "malaysian" ? 480 : 576;
+        } else if (accommodation === "university-inn") {
+          accomFee = 850;
+        } else if (accommodation === "taman-uni") {
+          accomFee = 450;
+        } else if (accommodation === "sintok") {
+          accomFee = 350;
+        }
+        accomFee *= trimesters;
+      }
+
+      const totalTuition = tuitionPerTrimester * trimesters;
+      const preRequisiteFee = preReqPerCredit * creditHours;
+      const totalWriteUp = writeUpFee * trimesters;
+      const thesisReExamFee = thesisFee;
+      const totalAcademic = totalTuition + preRequisiteFee + thesisFee + thesisReExamFee + totalWriteUp + insuranceFee + bondFee + accomFee;
+
+      document.getElementById("result").innerHTML = `
+        <strong>PhD (Full Research) Fee Breakdown:</strong><br>
+        Tuition Fee (RM${tuitionPerTrimester} × ${trimesters}): RM${totalTuition.toFixed(2)}<br>
+        Pre-requisite Course Fee (RM${preReqPerCredit} × ${creditHours}): RM${preRequisiteFee.toFixed(2)}<br>
+        Thesis Examination Fee (viva voce): RM${thesisFee.toFixed(2)}<br>
+        Thesis Re-examination Fee (re-viva): RM${thesisReExamFee.toFixed(2)}<br>
+        Write-up Fee (RM${writeUpFee} × ${trimesters}): RM${totalWriteUp.toFixed(2)}<br>
+        Insurance Fee: RM${insuranceFee.toFixed(2)}<br>
+        ${nationality === "non-malaysian" ? `Student Bond Fee (${country.toUpperCase()}): RM${bondFee.toFixed(2)}<br>` : ''}
+        ${accomFee > 0 ? `Accommodation Fee: RM${accomFee.toFixed(2)}<br>` : ''}
+        <hr>
+        <strong>Total Estimated Fee: RM${totalAcademic.toFixed(2)}</strong>
+      `;
+      document.getElementById("result").style.display = "block";
+    }
+  </script>
 </body>
 </html>
